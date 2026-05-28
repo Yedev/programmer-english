@@ -10,7 +10,6 @@
 
 set -euo pipefail
 
-GH_USER="yechanghong"
 GH_REPO="programmer-english"
 DB_FILE="programmer_english.db"
 DB_MAX_MB=100   # GitHub 单文件硬上限
@@ -27,6 +26,11 @@ command -v gh  >/dev/null || die "缺少 GitHub CLI, 装: brew install gh"
 command -v git >/dev/null || die "缺少 git"
 gh auth status >/dev/null 2>&1 || die "未登录 GitHub CLI, 先跑: gh auth login"
 [[ -f "$DB_FILE" ]] || die "找不到 $DB_FILE, 先跑: python3 build_db.py && python3 slim_db.py"
+
+# 从 gh 拿当前登录用户名 (不再硬编码)
+GH_USER="$(gh api user --jq .login)"
+[[ -n "$GH_USER" ]] || die "无法从 gh 取到当前用户名"
+ok "登录用户: $GH_USER"
 
 DB_BYTES=$(stat -f%z "$DB_FILE" 2>/dev/null || stat -c%s "$DB_FILE")
 DB_MB=$(( DB_BYTES / 1024 / 1024 ))
