@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>程序员英语 · 背单词</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1f262e; --line:#2a313a;
+    --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --accent2:#7ee787;
+    --warn:#f0883e; --bad:#ff7b72; --good:#3fb950;
+    --radius:14px; --shadow:0 8px 30px rgba(0,0,0,.35);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:radial-gradient(1200px 800px at 20% -10%,#1c2230 0%,var(--bg) 60%) no-repeat fixed;
+    color:var(--text);font:15px/1.55 var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .app{max-width:880px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.5px}
+  header .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);
+        background:var(--panel);border-radius:999px;font-size:12px;color:var(--muted)}
+  .pill b{color:var(--text)}
+
+  /* loader */
+  #loader{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+          padding:18px;display:flex;flex-direction:column;gap:10px}
+  #loader .bar{height:8px;background:var(--panel2);border-radius:999px;overflow:hidden}
+  #loader .bar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .15s}
+  #loader .msg{color:var(--muted);font-size:13px}
+
+  /* filters */
+  .filters{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;
+           display:flex;flex-direction:column;gap:12px}
+  .filters .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{padding:6px 12px;border:1px solid var(--line);background:var(--panel2);border-radius:999px;color:var(--text);
+        font-size:13px;transition:.15s}
+  .chip:hover{border-color:#3b424a}
+  .chip.on{background:linear-gradient(180deg,#1f6feb 0%,#1158c7 100%);border-color:#1f6feb;color:#fff}
+  .chip .n{color:var(--muted);font-size:11px;margin-left:6px}
+  .chip.on .n{color:#d6e9ff}
+  .filters label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin-right:6px}
+  .options{display:flex;flex-wrap:wrap;gap:12px;align-items:center;color:var(--muted);font-size:13px}
+  .options label{color:var(--text);font-size:13px;text-transform:none;letter-spacing:0;display:inline-flex;align-items:center;gap:6px;margin:0}
+  .options input[type=number]{width:88px;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+                              border-radius:8px;padding:5px 8px;font-family:var(--mono)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 14px;border-radius:10px;font-size:13px}
+  .btn:hover{border-color:#3b424a}
+  .btn.primary{background:linear-gradient(180deg,#238636,#1f7a30);border-color:#238636;color:#fff}
+  .btn.primary:hover{filter:brightness(1.05)}
+  .btn.ghost{background:transparent}
+
+  /* card area */
+  .stage{display:flex;flex-direction:column;gap:14px;align-items:center}
+  .meta-row{width:100%;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
+  .meta-row .left,.meta-row .right{display:flex;gap:10px;align-items:center}
+  .card{
+    width:100%;min-height:340px;perspective:1400px;
+  }
+  .flip{position:relative;width:100%;height:100%;min-height:340px;transition:transform .55s;transform-style:preserve-3d;cursor:pointer}
+  .card.flipped .flip{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;background:var(--panel);border:1px solid var(--line);border-radius:18px;
+        box-shadow:var(--shadow);padding:30px;display:flex;flex-direction:column;justify-content:center;
+        backface-visibility:hidden;overflow:auto}
+  .face.back{transform:rotateY(180deg)}
+  .word{font-size:44px;font-weight:600;letter-spacing:.5px;text-align:center;word-break:break-word}
+  .phonetic{margin-top:10px;text-align:center;color:var(--accent);font-family:var(--mono);font-size:18px;min-height:1.4em}
+  .badges{margin-top:14px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+  .badge{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
+  .badge.programmer{border-color:#7ee787;color:#7ee787;background:rgba(126,231,135,.08)}
+  .badge.oxford{border-color:#79c0ff;color:#79c0ff;background:rgba(121,192,255,.08)}
+  .badge.collins{border-color:#f0883e;color:#f0883e;background:rgba(240,136,62,.08)}
+
+  .face.back h3{margin:0 0 6px 0;font-size:13px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.8px}
+  .translation{font-size:18px;line-height:1.7;white-space:pre-wrap}
+  .definition{margin-top:14px;font-size:13px;color:var(--muted);white-space:pre-wrap;line-height:1.6;border-top:1px dashed var(--line);padding-top:10px}
+  .prog{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px;background:rgba(126,231,135,.04);padding:10px;border-radius:8px}
+  .prog h3{color:var(--accent2)}
+  .prog p{margin:4px 0;white-space:pre-wrap}
+  .exchange{margin-top:14px;font-size:12px;color:var(--muted);font-family:var(--mono);border-top:1px dashed var(--line);padding-top:10px}
+
+  .controls{display:flex;gap:10px;width:100%;justify-content:center}
+  .ctrl{flex:1 1 0;min-width:96px;padding:14px;border-radius:12px;border:1px solid var(--line);
+        background:var(--panel);color:var(--text);font-size:14px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .ctrl .k{font-size:11px;color:var(--muted);font-weight:400;font-family:var(--mono)}
+  .ctrl.dont{border-color:#5a2828;background:linear-gradient(180deg,#3a1f23,#2a1518)}
+  .ctrl.dont:hover{border-color:var(--bad)}
+  .ctrl.know{border-color:#1f4d2a;background:linear-gradient(180deg,#1c3823,#142a1a)}
+  .ctrl.know:hover{border-color:var(--good)}
+  .ctrl.skip{background:var(--panel2)}
+
+  .hints{color:var(--muted);font-size:12px;text-align:center}
+
+  /* empty state */
+  .empty{padding:40px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);text-align:center;color:var(--muted)}
+
+  /* responsive */
+  @media (max-width:540px){
+    .word{font-size:34px}
+    .face{padding:20px}
+    .ctrl{padding:12px;font-size:13px}
+    .filters{padding:12px}
+  }
+
+  details summary{cursor:pointer;color:var(--muted);font-size:12px}
+  details summary:hover{color:var(--text)}
+  .footer{color:var(--muted);font-size:12px;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div>
+      <h1>程序员英语 · 背单词</h1>
+      <div class="sub">基于 ECDICT (76万词) + Wei-Xia 程序员高频词标注</div>
+    </div>
+    <div id="stats" class="pill">数据库加载中…</div>
+  </header>
+
+  <section id="loader">
+    <div class="msg" id="loaderMsg">连接 sql.js…</div>
+    <div class="bar"><span id="loaderBar"></span></div>
+    <details>
+      <summary>看不到进度？</summary>
+      <div style="color:var(--muted);font-size:12px;margin-top:8px">
+        本应用会从同目录加载 <code>programmer_english.db</code> (~13MB)。
+        首次访问需下载 + 解码，之后会自动缓存到浏览器 IndexedDB，二次打开秒开。
+        如果是直接双击 HTML 打开报错，请用 <code>python3 -m http.server 8000</code> 启动一个本地服务器后访问 <code>http://localhost:8000</code>。
+      </div>
+    </details>
+  </section>
+
+  <section class="filters" id="filters" hidden>
+    <div class="row">
+      <label>词集</label>
+      <button class="chip on" data-set="programmer">程序员词 <span class="n" data-count="programmer"></span></button>
+      <button class="chip" data-set="cet4">CET4 <span class="n" data-count="cet4"></span></button>
+      <button class="chip" data-set="cet6">CET6 <span class="n" data-count="cet6"></span></button>
+      <button class="chip" data-set="ky">考研 <span class="n" data-count="ky"></span></button>
+      <button class="chip" data-set="toefl">TOEFL <span class="n" data-count="toefl"></span></button>
+      <button class="chip" data-set="ielts">IELTS <span class="n" data-count="ielts"></span></button>
+      <button class="chip" data-set="gre">GRE <span class="n" data-count="gre"></span></button>
+      <button class="chip" data-set="oxford">牛津 3000 <span class="n" data-count="oxford"></span></button>
+      <button class="chip" data-set="collins5">柯林斯 5★ <span class="n" data-count="collins5"></span></button>
+    </div>
+
+    <div class="row options">
+      <label><input type="checkbox" id="optShuffle" checked> 随机顺序</label>
+      <label><input type="checkbox" id="optSkipKnown" checked> 跳过已掌握</label>
+      <label><input type="checkbox" id="optAutoSpeak"> 自动朗读</label>
+      <label>词频范围 <input type="number" id="frqMin" placeholder="min" min="0"> – <input type="number" id="frqMax" placeholder="max" min="0"></label>
+    </div>
+
+    <div class="row actions">
+      <button class="btn primary" id="btnStart">开始 / 应用筛选</button>
+      <button class="btn" id="btnShuffle">重新洗牌</button>
+      <button class="btn ghost" id="btnResetProg">重置全部学习进度</button>
+      <span style="flex:1"></span>
+      <span class="pill"><b id="poolCount">0</b>&nbsp;张待背</span>
+      <span class="pill">已掌握&nbsp;<b id="knownCount">0</b></span>
+    </div>
+  </section>
+
+  <section class="stage" id="stage" hidden>
+    <div class="meta-row">
+      <div class="left">
+        <span id="progLabel">0 / 0</span>
+        <span id="setLabel"></span>
+      </div>
+      <div class="right">
+        <span id="rateLabel"></span>
+      </div>
+    </div>
+
+    <div class="card" id="card">
+      <div class="flip">
+        <div class="face front">
+          <div class="word" id="wordFront">—</div>
+          <div class="phonetic" id="phoneticFront"></div>
+          <div class="badges" id="badgesFront"></div>
+          <div class="hints" style="margin-top:18px">点卡片 / 空格键 翻面</div>
+        </div>
+        <div class="face back">
+          <div class="word" id="wordBack" style="font-size:24px;text-align:left"></div>
+          <div class="phonetic" id="phoneticBack" style="text-align:left;margin-top:4px;font-size:14px"></div>
+          <h3 style="margin-top:14px">中文释义</h3>
+          <div class="translation" id="trans"></div>
+          <div class="prog" id="prog" hidden>
+            <h3>程序员场景</h3>
+            <p id="progMeaning"></p>
+            <p id="progNote" style="color:var(--muted);font-size:13px"></p>
+          </div>
+          <div class="definition" id="def" hidden></div>
+          <div class="exchange" id="exch" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl dont" id="btnDont">不熟悉<span class="k">J / ←</span></button>
+      <button class="ctrl skip" id="btnSkip">跳过<span class="k">K / 空格</span></button>
+      <button class="ctrl know" id="btnKnow">已掌握<span class="k">L / →</span></button>
+    </div>
+    <div class="hints">键盘：空格翻面 · J 不熟悉 · K 跳过 · L 已掌握 · S 朗读</div>
+  </section>
+
+  <section class="empty" id="empty" hidden>
+    当前筛选条件下没有词了 🎉<br><br>
+    <button class="btn primary" onclick="document.getElementById('btnResetProg').click()">重置进度</button>
+    或调整筛选后<button class="btn" onclick="document.getElementById('btnStart').click()">重新开始</button>
+  </section>
+
+  <div class="footer">数据：<a href="https://github.com/skywind3000/ECDICT" target="_blank">ECDICT</a> · <a href="https://github.com/Wei-Xia/most-frequent-technology-english-words" target="_blank">most-frequent-technology-english-words</a></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<script>
+"use strict";
+
+// ============== 配置 ==============
+// 13MB 的瘦身版 db 直接跟 HTML 一起放 GitHub Pages, 走相对路径
+const DB_URL = 'programmer_english.db';
+
+// ============== IndexedDB 缓存 ==============
+const IDB_DB = 'ee-dict-cache';
+const IDB_STORE = 'files';
+
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r = indexedDB.open(IDB_DB, 1);
+    r.onupgradeneeded = ()=> r.result.createObjectStore(IDB_STORE);
+    r.onsuccess = ()=> res(r.result);
+    r.onerror = ()=> rej(r.error);
+  });
+}
+async function idbGet(key){
+  const db = await idbOpen();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(IDB_STORE,'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = ()=> res(req.result);
+    req.onerror = ()=> rej(req.error);
+  });
+}
+async function idbPut(key, val){
+  const db = await idbOpen();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).put(val, key);
+    tx.oncomplete = ()=> res();
+    tx.onerror = ()=> rej(tx.error);
+  });
+}
+
+async function fetchWithProgress(url, onProgress){
+  const resp = await fetch(url);
+  if(!resp.ok) throw new Error('HTTP '+resp.status+' on '+url);
+  const total = +resp.headers.get('content-length') || 0;
+  const reader = resp.body.getReader();
+  const chunks = []; let received = 0;
+  while(true){
+    const {done, value} = await reader.read();
+    if(done) break;
+    chunks.push(value); received += value.length;
+    onProgress(received, total);
+  }
+  const buf = new Uint8Array(received); let off = 0;
+  for(const c of chunks){ buf.set(c, off); off += c.length; }
+  return buf.buffer;
+}
+
+const loaderMsg = document.getElementById('loaderMsg');
+const loaderBar = document.getElementById('loaderBar');
+const stats = document.getElementById('stats');
+
+async function loadDbBuffer(){
+  const CACHE_KEY = 'programmer_english.db.v2-slim';
+  loaderMsg.textContent = '检查浏览器缓存…';
+  const cached = await idbGet(CACHE_KEY).catch(()=>null);
+  if(cached){
+    loaderMsg.textContent = '从缓存加载中…';
+    loaderBar.style.width = '100%';
+    return cached;
+  }
+  loaderMsg.textContent = '首次下载词库 (~13 MB)…';
+  const buf = await fetchWithProgress(DB_URL, (got, total)=>{
+    const mb = (got/1024/1024).toFixed(1);
+    if(total){
+      const pct = Math.min(100, got/total*100);
+      loaderBar.style.width = pct + '%';
+      loaderMsg.textContent = `下载词库 ${mb} / ${(total/1024/1024).toFixed(1)} MB`;
+    } else {
+      loaderMsg.textContent = `下载词库 ${mb} MB…`;
+    }
+  });
+  try { await idbPut(CACHE_KEY, buf); } catch(e){ console.warn('cache failed', e); }
+  return buf;
+}
+
+// ============== 应用主体 ==============
+const State = {
+  db: null,
+  set: 'programmer',
+  pool: [],         // 当前筛选出来的词条 id 列表
+  queue: [],        // 当前播放队列 (id 数组)
+  cursor: 0,        // 当前指向 queue 的索引
+  current: null,    // 当前词的完整行对象
+  flipped: false,
+  prog: loadProg(), // 学习进度 { [id]: 'known'|'dont'|'skip', ts:.. }
+  options: { shuffle:true, skipKnown:true, autoSpeak:false, frqMin:null, frqMax:null }
+};
+
+function loadProg(){
+  try{ return JSON.parse(localStorage.getItem('ee-prog')||'{}'); }
+  catch(e){ return {}; }
+}
+function saveProg(){ localStorage.setItem('ee-prog', JSON.stringify(State.prog)); }
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function rowsToObjects(stmt){
+  const out = [];
+  while(stmt.step()){ out.push(stmt.getAsObject()); }
+  stmt.free();
+  return out;
+}
+
+function countOf(setName){
+  let sql, params=[];
+  switch(setName){
+    case 'programmer': sql = "SELECT COUNT(*) c FROM words WHERE is_programmer=1"; break;
+    case 'oxford':     sql = "SELECT COUNT(*) c FROM words WHERE oxford=1"; break;
+    case 'collins5':   sql = "SELECT COUNT(*) c FROM words WHERE collins>=5"; break;
+    default:           sql = "SELECT COUNT(*) c FROM word_tags WHERE tag=?"; params=[setName];
+  }
+  const stmt = State.db.prepare(sql);
+  stmt.bind(params); stmt.step();
+  const c = stmt.getAsObject().c; stmt.free();
+  return c;
+}
+
+function poolIds(setName){
+  let sql, params=[];
+  const extra = [];
+  if(State.options.frqMin != null) extra.push("w.frq >= " + (+State.options.frqMin));
+  if(State.options.frqMax != null) extra.push("w.frq <= " + (+State.options.frqMax));
+  const where = extra.length ? (' AND ' + extra.join(' AND ')) : '';
+  switch(setName){
+    case 'programmer': sql = "SELECT id FROM words w WHERE is_programmer=1"+where; break;
+    case 'oxford':     sql = "SELECT id FROM words w WHERE oxford=1"+where; break;
+    case 'collins5':   sql = "SELECT id FROM words w WHERE collins>=5"+where; break;
+    default:           sql = "SELECT w.id FROM words w JOIN word_tags t ON t.word_id=w.id WHERE t.tag=?"+where;
+                       params=[setName];
+  }
+  const stmt = State.db.prepare(sql);
+  stmt.bind(params);
+  const ids = [];
+  while(stmt.step()){ ids.push(stmt.getAsObject().id); }
+  stmt.free();
+  return ids;
+}
+
+function fetchRow(id){
+  const stmt = State.db.prepare("SELECT * FROM words WHERE id=?");
+  stmt.bind([id]); stmt.step();
+  const o = stmt.getAsObject(); stmt.free(); return o;
+}
+
+// ============== 渲染 ==============
+const card = document.getElementById('card');
+const wordFront = document.getElementById('wordFront');
+const phoneticFront = document.getElementById('phoneticFront');
+const badgesFront = document.getElementById('badgesFront');
+const wordBack = document.getElementById('wordBack');
+const phoneticBack = document.getElementById('phoneticBack');
+const transEl = document.getElementById('trans');
+const defEl = document.getElementById('def');
+const exchEl = document.getElementById('exch');
+const progEl = document.getElementById('prog');
+const progMeaning = document.getElementById('progMeaning');
+const progNote = document.getElementById('progNote');
+const progLabel = document.getElementById('progLabel');
+const setLabel = document.getElementById('setLabel');
+const rateLabel = document.getElementById('rateLabel');
+const emptyEl = document.getElementById('empty');
+const stageEl = document.getElementById('stage');
+const poolCount = document.getElementById('poolCount');
+const knownCount = document.getElementById('knownCount');
+
+function renderCard(){
+  if(!State.current){
+    stageEl.hidden = true; emptyEl.hidden = false; return;
+  }
+  emptyEl.hidden = true; stageEl.hidden = false;
+  card.classList.remove('flipped'); State.flipped = false;
+
+  const c = State.current;
+  wordFront.textContent = c.word;
+  wordBack.textContent = c.word;
+  const ph = c.phonetic ? '/'+c.phonetic+'/' : '';
+  phoneticFront.textContent = ph;
+  phoneticBack.textContent = ph;
+
+  // badges
+  badgesFront.innerHTML = '';
+  if(c.is_programmer) badgesFront.appendChild(badge('程序员高频','programmer'));
+  if(c.oxford) badgesFront.appendChild(badge('牛津 3000','oxford'));
+  if(c.collins) badgesFront.appendChild(badge('柯林斯 '+c.collins+'★','collins'));
+  if(c.tag){
+    c.tag.split(/\s+/).forEach(t=>{ if(t) badgesFront.appendChild(badge(t.toUpperCase())); });
+  }
+
+  transEl.textContent = (c.translation||'(无)').replace(/\\n/g,'\n');
+  if(c.definition){ defEl.hidden=false; defEl.textContent='[EN] '+c.definition.replace(/\\n/g,'\n'); } else defEl.hidden=true;
+  if(c.exchange){ exchEl.hidden=false; exchEl.textContent='变形：'+c.exchange; } else exchEl.hidden=true;
+
+  if(c.is_programmer && (c.prog_meaning||c.prog_note)){
+    progEl.hidden = false;
+    progMeaning.textContent = c.prog_meaning || '';
+    progNote.textContent = c.prog_note || '';
+  } else progEl.hidden = true;
+
+  progLabel.textContent = (State.cursor+1) + ' / ' + State.queue.length;
+  setLabel.textContent = ' · ' + labelOfSet(State.set);
+
+  // 已掌握率
+  const known = Object.values(State.prog).filter(p=>p&&p.s==='known').length;
+  rateLabel.textContent = '已掌握 ' + known + ' 词';
+  knownCount.textContent = known;
+
+  if(State.options.autoSpeak) speak(c.word);
+}
+
+function labelOfSet(s){
+  const map = {programmer:'程序员词',cet4:'CET4',cet6:'CET6',ky:'考研',toefl:'TOEFL',ielts:'IELTS',gre:'GRE',oxford:'牛津3000',collins5:'柯林斯5★'};
+  return map[s]||s;
+}
+function badge(text, cls){
+  const b = document.createElement('span'); b.className = 'badge '+(cls||''); b.textContent = text; return b;
+}
+
+function flipCard(){ State.flipped = !State.flipped; card.classList.toggle('flipped', State.flipped); }
+
+function markCurrent(state){
+  if(!State.current) return;
+  State.prog[State.current.id] = {s:state, t:Date.now()};
+  saveProg();
+  next();
+}
+function skipCurrent(){ next(); }
+
+function next(){
+  State.cursor++;
+  while(State.cursor < State.queue.length){
+    const id = State.queue[State.cursor];
+    const p = State.prog[id];
+    if(State.options.skipKnown && p && p.s==='known'){ State.cursor++; continue; }
+    State.current = fetchRow(id);
+    renderCard();
+    return;
+  }
+  State.current = null; renderCard();
+}
+
+function startSession(){
+  State.pool = poolIds(State.set);
+  let q = State.pool.slice();
+  if(State.options.skipKnown) q = q.filter(id => !(State.prog[id]&&State.prog[id].s==='known'));
+  if(State.options.shuffle) shuffle(q);
+  State.queue = q; State.cursor = -1;
+  poolCount.textContent = State.queue.length;
+  next();
+}
+
+function speak(text){
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = .9;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+// ============== 事件 ==============
+document.querySelectorAll('.chip[data-set]').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('.chip[data-set]').forEach(c=>c.classList.remove('on'));
+    el.classList.add('on');
+    State.set = el.dataset.set;
+  });
+});
+document.getElementById('btnStart').addEventListener('click', ()=>{
+  State.options.shuffle = document.getElementById('optShuffle').checked;
+  State.options.skipKnown = document.getElementById('optSkipKnown').checked;
+  State.options.autoSpeak = document.getElementById('optAutoSpeak').checked;
+  const fmin = document.getElementById('frqMin').value, fmax = document.getElementById('frqMax').value;
+  State.options.frqMin = fmin === '' ? null : +fmin;
+  State.options.frqMax = fmax === '' ? null : +fmax;
+  startSession();
+});
+document.getElementById('btnShuffle').addEventListener('click', ()=>{
+  if(State.queue.length){ shuffle(State.queue); State.cursor=-1; next(); }
+});
+document.getElementById('btnResetProg').addEventListener('click', ()=>{
+  if(confirm('确定清空所有已掌握 / 不熟悉记录？')){
+    State.prog = {}; saveProg();
+    knownCount.textContent = '0';
+    startSession();
+  }
+});
+card.addEventListener('click', flipCard);
+document.getElementById('btnDont').addEventListener('click', ()=> markCurrent('dont'));
+document.getElementById('btnKnow').addEventListener('click', ()=> markCurrent('known'));
+document.getElementById('btnSkip').addEventListener('click', skipCurrent);
+
+document.addEventListener('keydown', e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.key===' '){ e.preventDefault(); flipCard(); }
+  else if(e.key==='j'||e.key==='J'||e.key==='ArrowLeft'){ markCurrent('dont'); }
+  else if(e.key==='l'||e.key==='L'||e.key==='ArrowRight'){ markCurrent('known'); }
+  else if(e.key==='k'||e.key==='K'){ skipCurrent(); }
+  else if(e.key==='s'||e.key==='S'){ if(State.current) speak(State.current.word); }
+});
+
+// ============== 启动 ==============
+(async function init(){
+  try{
+    loaderMsg.textContent = '加载 sql.js…';
+    const SQL = await initSqlJs({ locateFile: f => 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/'+f });
+    loaderBar.style.width = '6%';
+
+    const buf = await loadDbBuffer();
+    loaderMsg.textContent = '解析 SQLite…';
+    State.db = new SQL.Database(new Uint8Array(buf));
+
+    // 统计
+    const cnt = State.db.exec("SELECT COUNT(*) FROM words")[0].values[0][0];
+    stats.innerHTML = '词库 <b>'+cnt.toLocaleString()+'</b> 条 · 已缓存';
+
+    // 各词集计数
+    document.querySelectorAll('.chip[data-set]').forEach(el=>{
+      const c = countOf(el.dataset.set);
+      el.querySelector('.n').textContent = '· '+c;
+    });
+
+    document.getElementById('loader').remove();
+    document.getElementById('filters').hidden = false;
+    startSession();
+  }catch(e){
+    loaderMsg.textContent = '加载失败: ' + e.message;
+    loaderMsg.style.color = 'var(--bad)';
+    console.error(e);
+  }
+})();
+</script>
+</body>
+</html>

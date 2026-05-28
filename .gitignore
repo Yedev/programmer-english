@@ -1,0 +1,25 @@
+# programmer_english.db (~13MB 瘦身版) 现在跟 HTML 一起进 GitHub Pages, 不要 ignore
+# 但 sqlite 自动产生的临时文件忽略掉
+programmer_english.db-journal
+programmer_english.db-wal
+programmer_english.db-shm
+
+# 65MB 源 CSV, 用 build_db.py 可重新下载, 没必要进 git 历史
+ecdict.csv
+
+# build_db.py 产生的 770K 全量版备份 (如果用户跑过 --full)
+programmer_english.full.db
+
+# 调研时的临时目录
+wei-xia/
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+
+# 系统
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
